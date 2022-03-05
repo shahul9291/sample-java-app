@@ -1,63 +1,35 @@
 pipeline {
-    agent any
-    environment {
-        APP_HOME='/home/app'
-        PRAGRA_BATCH='devs'
-    }
-    options { 
-        quietPeriod(30) 
-    }
-    parameters { 
-            choice(name: 'ENV_TO_DEPLOY', 
-            choices: ['ST', 'UAT', 'STAGING'], description: 'Select a Env to deploy') 
-
-             booleanParam(name: 'RUN', defaultValue: true, description: 'SELECT TO RUN')
-    }
-    triggers {
-        pollSCM('* * * * *')
-    }
-    tools{
-        maven  'm3'
-        jdk 'jdk8'
-    }
-
-    stages {
-        stage('Git CheckoutOut'){
-            environment{
-                GIT_REPO='https://github.com/atinsingh/sample-java-app.git'
-            }
-            steps {
-                git "${GIT_REPO}"
-            }
-        }
+    agent any 
+    stages { 
         stage('Compile') {
             steps {
-                sh 'mvn compile'
+                sh 'mvn compile' 
             }
         }
-
-         stage('Unit Test') {
+        
+        stage('Test') {
             steps {
                 sh 'mvn test'
             }
         }
-
-         stage('Package') {
+        
+        stage('Package') {
             steps {
-                sh 'mvn package'
+                sh 'mvn package' 
             }
         }
-    }
-
-    post {
-        always {
-            echo 'ALL GOOD '
-            echo "${BRANCH_NAME}  : ${JOB_NAME}"
+        
+        stage('Archive Artifact') {
+            steps { 
+                archiveArtifacts 'target/*.jar'
+            }
         }
+        
+        stage('Publish Result') {
+            steps {
+                junit '**/*.xml'
+            }
+        }
+        
     }
-
-
 }
-
-
-// && 
